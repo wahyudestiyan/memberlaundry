@@ -98,7 +98,7 @@ def simpan_ke_spreadsheet(nama, nomor, jenis, mulai, selesai, kode, link):
     ])
 
 # ========== STREAMLIT ==========
-st.title("🧼 Form Pendaftaran Member Laundry")
+st.title("🧼 Pendaftaran Member Wangi Laundry")
 
 with st.form("form_pendaftaran"):
     nama = st.text_input("Nama Lengkap")
