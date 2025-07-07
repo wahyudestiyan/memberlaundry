@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 import os
 import gspread
 from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
@@ -33,6 +35,25 @@ def get_worksheet():
     client = gspread.authorize(creds)
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
 
+def upload_pdf_to_drive(file_path, filename):
+    scope = ["https://www.googleapis.com/auth/drive"]
+    creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=scope)
+    drive_service = build("drive", "v3", credentials=creds)
+
+    file_metadata = {
+        "name": filename,
+        "parents": [st.secrets["drive_folder_id"]]
+    }
+    media = MediaFileUpload(file_path, mimetype="application/pdf")
+    file = drive_service.files().create(body=file_metadata, media_body=media, fields="id").execute()
+
+    drive_service.permissions().create(
+        fileId=file.get("id"),
+        body={"type": "anyone", "role": "reader"},
+    ).execute()
+
+    return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
+
 # ========== GENERATE KARTU ==========
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
     kode = f"{'wangi-s' if jenis == 'Silver' else 'wangi-g'}-{urutan + 1:02d}"
@@ -40,7 +61,6 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
     selesai = mulai + timedelta(days=90 if jenis == 'Silver' else 180)
     pdf_path = os.path.join(OUTPUT_FOLDER, f"{kode}.pdf")
 
-    # Ambil path gambar dari direktori file ini
     background = {
         "Silver": "silver.png",
         "Gold": "gold.png"
@@ -52,17 +72,10 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
     if os.path.exists(bg_path):
         c.drawImage(ImageReader(bg_path), 0, 0, width=landscape(A6)[0], height=landscape(A6)[1])
 
-    labels = [
-        "Nama", "Nomor WA", "Jenis Member", "Kode Member", "Berlaku Dari", "Sampai Tanggal"
-    ]
-    values = [
-        nama, nomor, jenis, kode, format_tanggal_indo(mulai), format_tanggal_indo(selesai)
-    ]
+    labels = ["Nama", "Nomor WA", "Jenis Member", "Kode Member", "Berlaku Dari", "Sampai Tanggal"]
+    values = [nama, nomor, jenis, kode, format_tanggal_indo(mulai), format_tanggal_indo(selesai)]
 
-    x_label = 150
-    x_value = 255
-    y_start = 180
-    line_spacing = 22
+    x_label, x_value, y_start, line_spacing = 150, 255, 180, 22
 
     for i, (label, value) in enumerate(zip(labels, values)):
         y = y_start - i * line_spacing
@@ -84,7 +97,7 @@ def simpan_ke_spreadsheet(nama, nomor, jenis, mulai, selesai, kode, link):
         status, kode, link
     ])
 
-# ========== STREAMLIT APP ==========
+# ========== STREAMLIT ==========
 st.title("🧼 Form Pendaftaran Member Laundry")
 
 with st.form("form_pendaftaran"):
@@ -102,10 +115,11 @@ if submit and nama and nomor:
     pdf_path, mulai, selesai, kode = generate_kartu_pdf(nama, nomor_norm, jenis, jumlah_jenis)
 
     if pdf_path:
-        simpan_ke_spreadsheet(nama, nomor_norm, jenis, mulai, selesai, kode, os.path.abspath(pdf_path))
+        link_pdf = upload_pdf_to_drive(pdf_path, f"Kartu_{kode}.pdf")
+        simpan_ke_spreadsheet(nama, nomor_norm, jenis, mulai, selesai, kode, link_pdf)
         st.success(f"🎉 Kartu berhasil dibuat dengan kode: {kode}")
         with open(pdf_path, "rb") as f:
-            st.download_button("📥 Unduh Kartu PDF", f, file_name=f"Kartu_{kode}.pdf")
+            st.download_button("📅 Unduh Kartu PDF", f, file_name=f"Kartu_{kode}.pdf")
     else:
         st.error("❌ Gagal membuat kartu.")
 elif submit:
@@ -134,12 +148,8 @@ if cek_submit:
             if nomor_db == norm:
                 ditemukan = True
                 st.success(f"✅ Ditemukan: {row[0]} ({row[2]}) - {row[5]}")
-                file_path = row[7]
-                if os.path.exists(file_path):
-                    with open(file_path, "rb") as f:
-                        st.download_button("📥 Unduh Kartu PDF", f, file_name=os.path.basename(file_path))
-                else:
-                    st.warning("❌ File kartu tidak ditemukan di server.")
+                file_url = row[7]
+                st.markdown(f"[📄 Unduh Kartu PDF]({file_url})")
                 break
 
         if not ditemukan:
