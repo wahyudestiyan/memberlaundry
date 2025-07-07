@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import os
 import gspread
 from google.oauth2.service_account import Credentials
+import json
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
@@ -30,7 +31,8 @@ def normalisasi_nomor(nomor):
 
 def get_worksheet():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scope)
+    service_account_info = json.loads(st.secrets["google_service_account"])
+    creds = Credentials.from_service_account_info(service_account_info, scopes=scope)
     client = gspread.authorize(creds)
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
 
