@@ -6,12 +6,10 @@ from datetime import datetime, timedelta
 import os
 import gspread
 from google.oauth2.service_account import Credentials
-import json
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
 WORKSHEET_NAME = "member"
-CREDENTIALS_FILE = "credentials.json"
 OUTPUT_FOLDER = "output"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
@@ -35,7 +33,6 @@ def get_worksheet():
     client = gspread.authorize(creds)
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
 
-
 # ========== GENERATE KARTU ==========
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
     kode = f"{'wangi-s' if jenis == 'Silver' else 'wangi-g'}-{urutan + 1:02d}"
@@ -43,35 +40,23 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
     selesai = mulai + timedelta(days=90 if jenis == 'Silver' else 180)
     pdf_path = os.path.join(OUTPUT_FOLDER, f"{kode}.pdf")
 
-    # Path background
-    base_path = "/mnt/data" if "streamlit" in os.getcwd().lower() else os.path.join(os.getcwd(), "data")
+    # Ambil path gambar dari direktori file ini
     background = {
         "Silver": "silver.png",
         "Gold": "gold.png"
     }
     bg_file = background.get(jenis, "")
-    bg_path = os.path.join(base_path, bg_file)
+    bg_path = os.path.join(os.path.dirname(__file__), bg_file)
 
     c = canvas.Canvas(pdf_path, pagesize=landscape(A6))
     if os.path.exists(bg_path):
         c.drawImage(ImageReader(bg_path), 0, 0, width=landscape(A6)[0], height=landscape(A6)[1])
 
-    # Info Member (rata titik dua, value bold)
     labels = [
-        "Nama",
-        "Nomor WA",
-        "Jenis Member",
-        "Kode Member",
-        "Berlaku Dari",
-        "Sampai Tanggal"
+        "Nama", "Nomor WA", "Jenis Member", "Kode Member", "Berlaku Dari", "Sampai Tanggal"
     ]
     values = [
-        nama,
-        nomor,
-        jenis,
-        kode,
-        format_tanggal_indo(mulai),
-        format_tanggal_indo(selesai)
+        nama, nomor, jenis, kode, format_tanggal_indo(mulai), format_tanggal_indo(selesai)
     ]
 
     x_label = 150
@@ -99,7 +84,7 @@ def simpan_ke_spreadsheet(nama, nomor, jenis, mulai, selesai, kode, link):
         status, kode, link
     ])
 
-# ========== STREAMLIT ==========
+# ========== STREAMLIT APP ==========
 st.title("🧼 Form Pendaftaran Member Laundry")
 
 with st.form("form_pendaftaran"):
@@ -126,7 +111,6 @@ if submit and nama and nomor:
 elif submit:
     st.warning("Harap isi semua kolom.")
 
-# ========== CEK & UNDUH ULANG ==========
 st.markdown("---")
 st.subheader("🔍 Cek & Unduh Kembali Kartu")
 
