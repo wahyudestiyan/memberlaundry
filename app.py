@@ -42,7 +42,7 @@ def upload_pdf_to_drive(file_path, filename):
 
     file_metadata = {
         "name": filename,
-        "parents": [st.secrets["drive_folder_id"]]
+        "parents": [st.secrets["drive_folder_id"]]  # Pastikan ini
     }
     media = MediaFileUpload(file_path, mimetype="application/pdf")
     file = drive_service.files().create(body=file_metadata, media_body=media, fields="id").execute()
@@ -53,6 +53,7 @@ def upload_pdf_to_drive(file_path, filename):
     ).execute()
 
     return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
+
 
 # ========== GENERATE KARTU ==========
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
