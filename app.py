@@ -40,13 +40,17 @@ def upload_pdf_to_drive(file_path, filename):
     creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=scope)
     drive_service = build("drive", "v3", credentials=creds)
 
-   file_metadata = {
-    "name": filename,
-    "parents": [st.secrets["drive"]["folder_id"]]
-}
+    file_metadata = {
+        "name": filename,
+        "parents": [st.secrets["drive"]["folder_id"]]
+    }
 
     media = MediaFileUpload(file_path, mimetype="application/pdf")
-    file = drive_service.files().create(body=file_metadata, media_body=media, fields="id").execute()
+    file = drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
 
     drive_service.permissions().create(
         fileId=file.get("id"),
@@ -54,6 +58,7 @@ def upload_pdf_to_drive(file_path, filename):
     ).execute()
 
     return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
+
 
 
 # ========== GENERATE KARTU ==========
