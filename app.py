@@ -31,10 +31,10 @@ def normalisasi_nomor(nomor):
 
 def get_worksheet():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    service_account_info = json.loads(st.secrets["google_service_account"])
-    creds = Credentials.from_service_account_info(service_account_info, scopes=scope)
+    creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=scope)
     client = gspread.authorize(creds)
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
+
 
 # ========== GENERATE KARTU ==========
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
