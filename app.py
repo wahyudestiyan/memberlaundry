@@ -53,21 +53,20 @@ def upload_pdf_to_drive(file_path, filename):
         file = drive_service.files().create(
             body=file_metadata,
             media_body=media,
-            fields="id",
-            supportsAllDrives=False  # ← Ubah ke True
+            fields="id"
         ).execute()
 
         drive_service.permissions().create(
             fileId=file.get("id"),
-            body={"type": "anyone", "role": "reader"},
+            body={"type": "anyone", "role": "reader"}
         ).execute()
 
         return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
 
-   except HttpError as error:
-     st.error("❌ Gagal mengunggah ke Google Drive.")
-      st.code(error.content.decode("utf-8"))
-      return None
+    except HttpError as error:
+        st.error("❌ Gagal mengunggah ke Google Drive.")
+        st.code(error.content.decode("utf-8"))
+        return None
 
 
 
