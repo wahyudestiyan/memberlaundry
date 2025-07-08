@@ -37,34 +37,38 @@ def get_worksheet():
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
 
 def upload_pdf_to_drive(file_path, filename):
-    scope = ["https://www.googleapis.com/auth/drive"]
-    creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=scope)
-    drive_service = build("drive", "v3", credentials=creds)
+    try:
+        scope = ["https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=scope)
+        drive_service = build("drive", "v3", credentials=creds)
 
-    file_metadata = {
-        "name": filename,
-        "parents": [st.secrets["drive"]["folder_id"]]
-    }
+        folder_id = st.secrets["drive"]["folder_id"]  # Harus disimpan seperti ini di secrets
 
-    media = MediaFileUpload(file_path, mimetype="application/pdf")
-    file = drive_service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id"
-    ).execute()
+        file_metadata = {
+            "name": filename,
+            "parents": [folder_id]
+        }
 
-    drive_service.permissions().create(
-        fileId=file.get("id"),
-        body={"type": "anyone", "role": "reader"},
-    ).execute()
+        media = MediaFileUpload(file_path, mimetype="application/pdf")
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id",
+            supportsAllDrives=True  # ← penting jika folder dari Shared Drive
+        ).execute()
 
-    return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
+        drive_service.permissions().create(
+            fileId=file.get("id"),
+            body={"type": "anyone", "role": "reader"},
+        ).execute()
 
+        return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
 
     except HttpError as error:
         st.error("❌ Gagal mengunggah ke Google Drive.")
         st.code(error.content.decode("utf-8"))  # tampilkan error asli
         return None
+
 
 
 # ========== GENERATE KARTU ==========
