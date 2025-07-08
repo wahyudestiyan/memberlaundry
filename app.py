@@ -54,7 +54,7 @@ def upload_pdf_to_drive(file_path, filename):
             body=file_metadata,
             media_body=media,
             fields="id",
-            supportsAllDrives=True  # ← Ubah ke True
+            supportsAllDrives=False  # ← Ubah ke True
         ).execute()
 
         drive_service.permissions().create(
