@@ -63,11 +63,6 @@ def upload_pdf_to_drive(file_path, filename):
 
 # ========== GENERATE KARTU ==========
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
-    # Ukuran halaman rasio 16:9 dalam satuan point (1 point = 1/72 inch)
-    # 16:9 rasio contoh: 480pt x 270pt
-    PAGE_WIDTH = 480
-    PAGE_HEIGHT = 270
-
     kode = f"{'wangi-s' if jenis == 'Silver' else 'wangi-g'}-{urutan + 1:02d}"
     mulai = datetime.today().date()
     selesai = mulai + timedelta(days=90 if jenis == 'Silver' else 180)
@@ -80,32 +75,24 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
     bg_file = background.get(jenis, "")
     bg_path = os.path.join(os.path.dirname(__file__), bg_file)
 
-    c = canvas.Canvas(pdf_path, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
-
-    # Gambar latar belakang jika ada
+    c = canvas.Canvas(pdf_path, pagesize=landscape(A6))
     if os.path.exists(bg_path):
-        c.drawImage(ImageReader(bg_path), 0, 0, width=PAGE_WIDTH, height=PAGE_HEIGHT)
+        c.drawImage(ImageReader(bg_path), 0, 0, width=landscape(A6)[0], height=landscape(A6)[1])
 
-    # Data untuk ditampilkan di kartu
     labels = ["Nama", "Nomor WA", "Jenis Member", "Kode Member", "Berlaku Dari", "Sampai Tanggal"]
     values = [nama, nomor, jenis, kode, format_tanggal_indo(mulai), format_tanggal_indo(selesai)]
 
-    # Penempatan teks disesuaikan dengan proporsi halaman 16:9
-    x_label = 60     # posisi kiri label
-    x_value = 180    # posisi kanan nilai
-    y_start = 190    # posisi awal dari atas
-    line_spacing = 22  # jarak antar baris
+    x_label, x_value, y_start, line_spacing = 150, 255, 180, 22
 
     for i, (label, value) in enumerate(zip(labels, values)):
         y = y_start - i * line_spacing
-        c.setFont("Helvetica", 11)
+        c.setFont("Helvetica", 12)
         c.drawString(x_label, y, f"{label}")
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont("Helvetica-Bold", 12)
         c.drawString(x_value, y, f": {value}")
 
     c.save()
     return pdf_path, mulai, selesai, kode
-
 
 def simpan_ke_spreadsheet(nama, nomor, jenis, mulai, selesai, kode, link):
     sheet = get_worksheet()
