@@ -8,7 +8,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from googleapiclient.errors import HttpError
+#from googleapiclient.errors import HttpError
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
@@ -64,10 +64,10 @@ def upload_pdf_to_drive(file_path, filename):
 
         return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
 
-    except HttpError as error:
-        st.error("❌ Gagal mengunggah ke Google Drive.")
-        st.code(error.content.decode("utf-8"))
-        return None
+   # except HttpError as error:
+    #    st.error("❌ Gagal mengunggah ke Google Drive.")
+     #   st.code(error.content.decode("utf-8"))
+      #  return None
 
 
 
