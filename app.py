@@ -107,6 +107,16 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
     return pdf_path, mulai, selesai, kode
 
 
+def simpan_ke_spreadsheet(nama, nomor, jenis, mulai, selesai, kode, link):
+    sheet = get_worksheet()
+    status = "Aktif" if selesai >= datetime.today().date() else "Tidak Aktif"
+    sheet.append_row([
+        nama, nomor, jenis,
+        mulai.strftime('%Y-%m-%d'),
+        selesai.strftime('%Y-%m-%d'),
+        status, kode, link
+    ])
+
 # ========== STREAMLIT ==========
 st.title("🧼 Pendaftaran Member Wangi Laundry")
 
