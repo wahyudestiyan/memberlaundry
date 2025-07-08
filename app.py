@@ -59,8 +59,6 @@ def upload_pdf_to_drive(file_path, filename):
 
     return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
 
-
-
 # ========== GENERATE KARTU ==========
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
     kode = f"{'wangi-s' if jenis == 'Silver' else 'wangi-g'}-{urutan + 1:02d}"
