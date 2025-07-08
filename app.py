@@ -54,7 +54,7 @@ def upload_pdf_to_drive(file_path, filename):
             body=file_metadata,
             media_body=media,
             fields="id",
-            supportsAllDrives=False  # FALSE karena pakai My Drive biasa
+            supportsAllDrives=True  # ← Ubah ke True
         ).execute()
 
         drive_service.permissions().create(
@@ -66,8 +66,9 @@ def upload_pdf_to_drive(file_path, filename):
 
     except HttpError as error:
         st.error("❌ Gagal mengunggah ke Google Drive.")
-        st.code(error.content.decode("utf-8"))  # ← tampilkan pesan error
+        st.code(error.content.decode("utf-8"))
         return None
+
 
 
 # ========== GENERATE KARTU ==========
