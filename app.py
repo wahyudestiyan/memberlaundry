@@ -47,24 +47,19 @@ def upload_pdf_to_drive(file_path, filename):
     }
 
     media = MediaFileUpload(file_path, mimetype="application/pdf")
+    file = drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
 
-    try:
-        # ✅ Tambahkan log PDF
-        st.write("📄 Uploading file:", file_path)
-        st.write("📦 Size (bytes):", os.path.getsize(file_path))
+    drive_service.permissions().create(
+        fileId=file.get("id"),
+        body={"type": "anyone", "role": "reader"},
+    ).execute()
 
-        file = drive_service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields="id"
-        ).execute()
+    return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
 
-        drive_service.permissions().create(
-            fileId=file.get("id"),
-            body={"type": "anyone", "role": "reader"},
-        ).execute()
-
-        return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
 
     except HttpError as error:
         st.error("❌ Gagal mengunggah ke Google Drive.")
