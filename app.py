@@ -8,6 +8,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+from googleapiclient.errors import HttpError
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
@@ -46,18 +47,30 @@ def upload_pdf_to_drive(file_path, filename):
     }
 
     media = MediaFileUpload(file_path, mimetype="application/pdf")
-    file = drive_service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id"
-    ).execute()
 
-    drive_service.permissions().create(
-        fileId=file.get("id"),
-        body={"type": "anyone", "role": "reader"},
-    ).execute()
+    try:
+        # ✅ Tambahkan log PDF
+        st.write("📄 Uploading file:", file_path)
+        st.write("📦 Size (bytes):", os.path.getsize(file_path))
 
-    return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id"
+        ).execute()
+
+        drive_service.permissions().create(
+            fileId=file.get("id"),
+            body={"type": "anyone", "role": "reader"},
+        ).execute()
+
+        return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
+
+    except HttpError as error:
+        st.error("❌ Gagal mengunggah ke Google Drive.")
+        st.code(error.content.decode("utf-8"))  # tampilkan error asli
+        return None
+
 
 # ========== GENERATE KARTU ==========
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
