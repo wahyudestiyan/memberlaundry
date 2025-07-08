@@ -42,7 +42,7 @@ def upload_pdf_to_drive(file_path, filename):
         creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=scope)
         drive_service = build("drive", "v3", credentials=creds)
 
-        folder_id = st.secrets["drive"]["folder_id"]  # Harus disimpan seperti ini di secrets
+        folder_id = st.secrets["drive"]["folder_id"]
 
         file_metadata = {
             "name": filename,
@@ -54,7 +54,7 @@ def upload_pdf_to_drive(file_path, filename):
             body=file_metadata,
             media_body=media,
             fields="id",
-            supportsAllDrives=False  # ← penting jika folder dari Shared Drive
+            supportsAllDrives=False  # FALSE karena pakai My Drive biasa
         ).execute()
 
         drive_service.permissions().create(
@@ -66,9 +66,8 @@ def upload_pdf_to_drive(file_path, filename):
 
     except HttpError as error:
         st.error("❌ Gagal mengunggah ke Google Drive.")
-        st.code(error.content.decode("utf-8"))  # tampilkan error asli
+        st.code(error.content.decode("utf-8"))  # ← tampilkan pesan error
         return None
-
 
 
 # ========== GENERATE KARTU ==========
