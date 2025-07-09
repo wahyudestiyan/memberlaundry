@@ -34,8 +34,11 @@ def normalisasi_nomor(nomor):
 
 def get_worksheet():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    token_info = json.loads(st.secrets["google_token"])
-    creds = Credentials.from_authorized_user_info(token_info, scopes=scope)
+    token_info = st.secrets["google_token"]
+creds = Credentials.from_authorized_user_info(token_info, scopes=[
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/spreadsheets"
+])
     client = gspread.authorize(creds)
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
 
@@ -43,8 +46,11 @@ def get_worksheet():
 def upload_pdf_to_drive(file_path, filename):
     try:
         # Ambil kredensial dari secrets
-        token_info = json.loads(st.secrets["google_token"])
-        creds = Credentials.from_authorized_user_info(token_info, scopes=["https://www.googleapis.com/auth/drive.file"])
+       token_info = st.secrets["google_token"]
+creds = Credentials.from_authorized_user_info(token_info, scopes=[
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/spreadsheets"
+])
         drive_service = build("drive", "v3", credentials=creds)
 
         # Folder Drive tidak wajib kalau pakai root (hapus ini jika tidak punya folder_id)
