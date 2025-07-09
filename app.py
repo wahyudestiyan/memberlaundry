@@ -11,7 +11,6 @@ from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 import json
 
-
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
 WORKSHEET_NAME = "member"
@@ -35,7 +34,16 @@ def normalisasi_nomor(nomor):
 def get_worksheet():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     token_info = st.secrets["google_token"]
-    creds = Credentials.from_authorized_user_info(token_info, scopes=scope)
+
+    creds = Credentials(
+        token=token_info["token"],
+        refresh_token=token_info["refresh_token"],
+        token_uri=token_info["token_uri"],
+        client_id=token_info["client_id"],
+        client_secret=token_info["client_secret"],
+        scopes=scope
+    )
+
     client = gspread.authorize(creds)
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
 
