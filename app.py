@@ -8,7 +8,7 @@ import gspread
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
-from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials
 import json
 
 # ========== KONFIGURASI ==========
@@ -37,19 +37,14 @@ def get_worksheet():
         "https://www.googleapis.com/auth/drive"
     ]
 
-    token_info = st.secrets["google_token"]
-    creds = Credentials(
-        token=token_info["token"],
-        refresh_token=token_info["refresh_token"],
-        token_uri=token_info["token_uri"],
-        client_id=token_info["client_id"],
-        client_secret=token_info["client_secret"],
+    creds = Credentials.from_service_account_info(
+        st.secrets["google_service_account"],
         scopes=scope
     )
 
     client = gspread.authorize(creds)
 
-    # 🛠 Tambahan untuk debug: tampilkan email agar bisa dishare akses Spreadsheet
+    # 🔎 Tampilkan email service account untuk dibagikan akses spreadsheet
     try:
         drive_service = build("drive", "v3", credentials=creds)
         about = drive_service.about().get(fields="user").execute()
@@ -62,13 +57,8 @@ def get_worksheet():
 
 def upload_pdf_to_drive(file_path, filename):
     try:
-        token_info = st.secrets["google_token"]
-        creds = Credentials(
-            token=token_info["token"],
-            refresh_token=token_info["refresh_token"],
-            token_uri=token_info["token_uri"],
-            client_id=token_info["client_id"],
-            client_secret=token_info["client_secret"],
+        creds = Credentials.from_service_account_info(
+            st.secrets["google_service_account"],
             scopes=[
                 "https://www.googleapis.com/auth/drive.file",
                 "https://www.googleapis.com/auth/spreadsheets"
@@ -104,6 +94,7 @@ def upload_pdf_to_drive(file_path, filename):
         st.error("❌ Gagal mengunggah ke Google Drive.")
         st.code(error.content.decode("utf-8"))
         return None
+
 
 
 # ========== GENERATE KARTU ==========
