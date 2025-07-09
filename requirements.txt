@@ -1,6 +1,7 @@
 streamlit
-reportlab
 gspread
+oauth2client
+reportlab
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
