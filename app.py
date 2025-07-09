@@ -11,6 +11,7 @@ from googleapiclient.errors import HttpError
 from google.oauth2.service_account import Credentials
 import json
 import requests
+from reportlab.lib.units import mm
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
@@ -115,12 +116,20 @@ def upload_to_supabase(file_path, filename):
 
 
 # ========== GENERATE KARTU ==========
+
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
     kode = f"{'wangi-s' if jenis == 'Silver' else 'wangi-g'}-{urutan + 1:02d}"
     mulai = datetime.today().date()
     selesai = mulai + timedelta(days=90 if jenis == 'Silver' else 180)
     pdf_path = os.path.join(OUTPUT_FOLDER, f"{kode}.pdf")
 
+    # Ukuran Canva 1920x1080 px dikonversi ke mm lalu ke points
+    width_mm = 1920 * 0.264583
+    height_mm = 1080 * 0.264583
+    PAGE_WIDTH = width_mm * mm
+    PAGE_HEIGHT = height_mm * mm
+
+    # Pilih background sesuai jenis
     background = {
         "Silver": "silver.png",
         "Gold": "gold.png"
@@ -128,24 +137,31 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
     bg_file = background.get(jenis, "")
     bg_path = os.path.join(os.path.dirname(__file__), bg_file)
 
-    c = canvas.Canvas(pdf_path, pagesize=landscape(A6))
-    if os.path.exists(bg_path):
-        c.drawImage(ImageReader(bg_path), 0, 0, width=landscape(A6)[0], height=landscape(A6)[1])
+    c = canvas.Canvas(pdf_path, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
 
+    # Tampilkan background jika ada
+    if os.path.exists(bg_path):
+        c.drawImage(ImageReader(bg_path), 0, 0, width=PAGE_WIDTH, height=PAGE_HEIGHT)
+
+    # Konten teks
     labels = ["Nama", "Nomor WA", "Jenis Member", "Kode Member", "Berlaku Dari", "Sampai Tanggal"]
     values = [nama, nomor, jenis, kode, format_tanggal_indo(mulai), format_tanggal_indo(selesai)]
 
-    x_label, x_value, y_start, line_spacing = 150, 255, 180, 22
+    # Posisi teks (disesuaikan dengan desain Canva 16:9)
+    x_label, x_value = 800, 1150
+    y_start = 800
+    line_spacing = 60
 
     for i, (label, value) in enumerate(zip(labels, values)):
         y = y_start - i * line_spacing
-        c.setFont("Helvetica", 12)
+        c.setFont("Helvetica", 30)
         c.drawString(x_label, y, f"{label}")
-        c.setFont("Helvetica-Bold", 12)
+        c.setFont("Helvetica-Bold", 30)
         c.drawString(x_value, y, f": {value}")
 
     c.save()
     return pdf_path, mulai, selesai, kode
+
 
 def simpan_ke_spreadsheet(nama, nomor, jenis, mulai, selesai, kode, link):
     sheet = get_worksheet()
