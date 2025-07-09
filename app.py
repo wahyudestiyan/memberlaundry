@@ -10,6 +10,7 @@ from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
 from google.oauth2.service_account import Credentials
 import json
+import requests
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
@@ -95,6 +96,30 @@ def upload_pdf_to_drive(file_path, filename):
         st.code(error.content.decode("utf-8"))
         return None
 
+def upload_to_supabase(file_path, filename):
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["key"]
+    bucket = st.secrets["supabase"]["bucket"]
+
+    with open(file_path, "rb") as f:
+        file_data = f.read()
+
+    upload_url = f"{url}/storage/v1/object/{bucket}/{filename}"
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/pdf"
+    }
+
+    response = requests.put(upload_url, headers=headers, data=file_data)
+
+    if response.status_code == 200:
+        return f"{url}/storage/v1/object/public/{bucket}/{filename}"
+    else:
+        st.error("❌ Gagal upload ke Supabase Storage.")
+        st.code(response.text)
+        return None
+
 
 
 # ========== GENERATE KARTU ==========
@@ -158,7 +183,7 @@ if submit and nama and nomor:
     pdf_path, mulai, selesai, kode = generate_kartu_pdf(nama, nomor_norm, jenis, jumlah_jenis)
 
     if pdf_path:
-        link_pdf = upload_pdf_to_drive(pdf_path, f"Kartu_{kode}.pdf")
+        link_pdf = upload_to_supabase(pdf_path, f"Kartu_{kode}.pdf")
         simpan_ke_spreadsheet(nama, nomor_norm, jenis, mulai, selesai, kode, link_pdf)
         st.success(f"🎉 Kartu berhasil dibuat dengan kode: {kode}")
         with open(pdf_path, "rb") as f:
