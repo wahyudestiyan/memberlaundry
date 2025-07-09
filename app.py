@@ -32,9 +32,12 @@ def normalisasi_nomor(nomor):
     return nomor
 
 def get_worksheet():
-    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    token_info = st.secrets["google_token"]
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
 
+    token_info = st.secrets["google_token"]
     creds = Credentials(
         token=token_info["token"],
         refresh_token=token_info["refresh_token"],
@@ -45,20 +48,35 @@ def get_worksheet():
     )
 
     client = gspread.authorize(creds)
+
+    # 🛠 Tambahan untuk debug: tampilkan email agar bisa dishare akses Spreadsheet
+    try:
+        drive_service = build("drive", "v3", credentials=creds)
+        about = drive_service.about().get(fields="user").execute()
+        st.info(f"📧 Spreadsheet harus dibagikan ke: **{about['user']['emailAddress']}**")
+    except Exception as e:
+        st.warning("⚠️ Tidak bisa mengambil info user dari token")
+
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
+
 
 def upload_pdf_to_drive(file_path, filename):
     try:
-        # Ambil kredensial dari secrets
         token_info = st.secrets["google_token"]
-        creds = Credentials.from_authorized_user_info(token_info, scopes=[
-            "https://www.googleapis.com/auth/drive.file",
-            "https://www.googleapis.com/auth/spreadsheets"
-        ])
+        creds = Credentials(
+            token=token_info["token"],
+            refresh_token=token_info["refresh_token"],
+            token_uri=token_info["token_uri"],
+            client_id=token_info["client_id"],
+            client_secret=token_info["client_secret"],
+            scopes=[
+                "https://www.googleapis.com/auth/drive.file",
+                "https://www.googleapis.com/auth/spreadsheets"
+            ]
+        )
 
         drive_service = build("drive", "v3", credentials=creds)
 
-        # Folder Drive tidak wajib kalau pakai root (hapus ini jika tidak punya folder_id)
         folder_id = st.secrets["drive"].get("folder_id", None)
 
         file_metadata = {
@@ -86,7 +104,6 @@ def upload_pdf_to_drive(file_path, filename):
         st.error("❌ Gagal mengunggah ke Google Drive.")
         st.code(error.content.decode("utf-8"))
         return None
-
 
 
 # ========== GENERATE KARTU ==========
