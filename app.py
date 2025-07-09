@@ -146,9 +146,9 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
     labels = ["Nama", "Nomor WA", "Jenis Member", "Kode Member", "Berlaku Dari", "Sampai Tanggal"]
     values = [nama, nomor, jenis, kode, format_tanggal_indo(mulai), format_tanggal_indo(selesai)]
 
-    x_label = 50 * mm
-    x_value = 95 * mm
-    y_start = 75 * mm
+    x_label = 70 * mm
+    x_value = 105 * mm
+    y_start = 50 * mm
     line_spacing = 8 * mm
 
     for i, (label, value) in enumerate(zip(labels, values)):
