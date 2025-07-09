@@ -44,29 +44,38 @@ def upload_pdf_to_drive(file_path, filename):
 
         folder_id = st.secrets["drive"]["folder_id"]
 
+        # STEP 1: Buat file metadata (kosong dulu)
         file_metadata = {
             "name": filename,
             "parents": [folder_id]
         }
-
-        media = MediaFileUpload(file_path, mimetype="application/pdf")
-        file = drive_service.files().create(
+        created_file = drive_service.files().create(
             body=file_metadata,
-            media_body=media,
             fields="id"
         ).execute()
 
+        file_id = created_file.get("id")
+
+        # STEP 2: Upload isi PDF
+        media = MediaFileUpload(file_path, mimetype="application/pdf")
+        drive_service.files().update(
+            fileId=file_id,
+            media_body=media
+        ).execute()
+
+        # STEP 3: Buat file publik
         drive_service.permissions().create(
-            fileId=file.get("id"),
+            fileId=file_id,
             body={"type": "anyone", "role": "reader"}
         ).execute()
 
-        return f"https://drive.google.com/file/d/{file.get('id')}/view?usp=sharing"
+        return f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
 
     except HttpError as error:
         st.error("❌ Gagal mengunggah ke Google Drive.")
         st.code(error.content.decode("utf-8"))
         return None
+
 
 
 
