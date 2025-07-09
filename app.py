@@ -117,19 +117,18 @@ def upload_to_supabase(file_path, filename):
 
 # ========== GENERATE KARTU ==========
 
+
+
 def generate_kartu_pdf(nama, nomor, jenis, urutan):
     kode = f"{'wangi-s' if jenis == 'Silver' else 'wangi-g'}-{urutan + 1:02d}"
     mulai = datetime.today().date()
     selesai = mulai + timedelta(days=90 if jenis == 'Silver' else 180)
     pdf_path = os.path.join(OUTPUT_FOLDER, f"{kode}.pdf")
 
-    # Ukuran Canva 1920x1080 px dikonversi ke mm lalu ke points
-    width_mm = 1920 * 0.264583
-    height_mm = 1080 * 0.264583
-    PAGE_WIDTH = width_mm * mm
-    PAGE_HEIGHT = height_mm * mm
+    # Ukuran custom: lebih panjang dari A6, rasio 16:9 (160mm x 90mm)
+    PAGE_WIDTH = 160 * mm
+    PAGE_HEIGHT = 90 * mm
 
-    # Pilih background sesuai jenis
     background = {
         "Silver": "silver.png",
         "Gold": "gold.png"
@@ -139,28 +138,29 @@ def generate_kartu_pdf(nama, nomor, jenis, urutan):
 
     c = canvas.Canvas(pdf_path, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
 
-    # Tampilkan background jika ada
+    # Pasang background dari Canva (harus rasio 16:9)
     if os.path.exists(bg_path):
         c.drawImage(ImageReader(bg_path), 0, 0, width=PAGE_WIDTH, height=PAGE_HEIGHT)
 
-    # Konten teks
+    # Posisi teks disesuaikan agar tetap proporsional
     labels = ["Nama", "Nomor WA", "Jenis Member", "Kode Member", "Berlaku Dari", "Sampai Tanggal"]
     values = [nama, nomor, jenis, kode, format_tanggal_indo(mulai), format_tanggal_indo(selesai)]
 
-    # Posisi teks (disesuaikan dengan desain Canva 16:9)
-    x_label, x_value = 800, 1150
-    y_start = 800
-    line_spacing = 60
+    x_label = 50 * mm
+    x_value = 95 * mm
+    y_start = 75 * mm
+    line_spacing = 8 * mm
 
     for i, (label, value) in enumerate(zip(labels, values)):
         y = y_start - i * line_spacing
-        c.setFont("Helvetica", 30)
+        c.setFont("Helvetica", 10)
         c.drawString(x_label, y, f"{label}")
-        c.setFont("Helvetica-Bold", 30)
+        c.setFont("Helvetica-Bold", 10)
         c.drawString(x_value, y, f": {value}")
 
     c.save()
     return pdf_path, mulai, selesai, kode
+
 
 
 def simpan_ke_spreadsheet(nama, nomor, jenis, mulai, selesai, kode, link):
