@@ -45,14 +45,6 @@ def get_worksheet():
 
     client = gspread.authorize(creds)
 
-    # 🔎 Tampilkan email service account untuk dibagikan akses spreadsheet
-    try:
-        drive_service = build("drive", "v3", credentials=creds)
-        about = drive_service.about().get(fields="user").execute()
-        st.info(f"📧 Spreadsheet harus dibagikan ke: **{about['user']['emailAddress']}**")
-    except Exception as e:
-        st.warning("⚠️ Tidak bisa mengambil info user dari token")
-
     return client.open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
 
 
