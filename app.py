@@ -5,10 +5,12 @@ from reportlab.lib.utils import ImageReader
 from datetime import datetime, timedelta
 import os
 import gspread
-from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
+from google.oauth2.credentials import Credentials
+import json
+
 
 # ========== KONFIGURASI ==========
 SPREADSHEET_ID = "1yD7FOMO8VMTYwmEKsNJBv34etuWntHRLW8QACbukTyU"
@@ -38,44 +40,39 @@ def get_worksheet():
 
 def upload_pdf_to_drive(file_path, filename):
     try:
-        scope = ["https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_info(st.secrets["google_service_account"], scopes=scope)
+        # Ambil kredensial dari secrets
+        token_info = json.loads(st.secrets["google_token"]["token"])
+        creds = Credentials.from_authorized_user_info(token_info, scopes=["https://www.googleapis.com/auth/drive.file"])
         drive_service = build("drive", "v3", credentials=creds)
 
-        folder_id = st.secrets["drive"]["folder_id"]
+        # Folder Drive tidak wajib kalau pakai root (hapus ini jika tidak punya folder_id)
+        folder_id = st.secrets["drive"].get("folder_id", None)
 
-        # STEP 1: Buat file metadata (kosong dulu)
         file_metadata = {
             "name": filename,
-            "parents": [folder_id]
         }
-        created_file = drive_service.files().create(
+        if folder_id:
+            file_metadata["parents"] = [folder_id]
+
+        media = MediaFileUpload(file_path, mimetype="application/pdf")
+        file = drive_service.files().create(
             body=file_metadata,
+            media_body=media,
             fields="id"
         ).execute()
 
-        file_id = created_file.get("id")
-
-        # STEP 2: Upload isi PDF
-        media = MediaFileUpload(file_path, mimetype="application/pdf")
-        drive_service.files().update(
-            fileId=file_id,
-            media_body=media
-        ).execute()
-
-        # STEP 3: Buat file publik
+        # Buat file bisa diakses publik
         drive_service.permissions().create(
-            fileId=file_id,
+            fileId=file["id"],
             body={"type": "anyone", "role": "reader"}
         ).execute()
 
-        return f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
+        return f"https://drive.google.com/file/d/{file['id']}/view?usp=sharing"
 
     except HttpError as error:
         st.error("❌ Gagal mengunggah ke Google Drive.")
         st.code(error.content.decode("utf-8"))
         return None
-
 
 
 
