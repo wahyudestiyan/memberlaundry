@@ -223,7 +223,7 @@ if cek_submit:
             nomor_db = normalisasi_nomor(row[1])
             if nomor_db == norm:
                 ditemukan = True
-                st.success(f"✅ Ditemukan: {row[0]} ({row[2]}) - {row[5]}")
+                st.success(f"✅ Ditemukan: {row[0]} ({row[2]}) - {row[5]} dengan Kode Member: {row[6]}")
                 file_url = row[7]
                 st.markdown(f"[📄 Unduh Kartu PDF]({file_url})")
                 break
